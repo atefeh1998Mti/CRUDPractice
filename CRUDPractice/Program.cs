@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data.SqlClient;
 
 namespace CRUDPractice
@@ -11,152 +8,98 @@ namespace CRUDPractice
     {
         static void Main(string[] args)
         {
-            string connectionString = "Server=.;Database=TestDb;Trusted_Connection=True;";
+            string connectionString = @"Server=.;Database=TestDB;Trusted_Connection=True;";
+            StudentRepository repo = new StudentRepository(connectionString);
 
-            try
+            while (true)
             {
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                Console.WriteLine("\n--- Student Menu ---");
+                Console.WriteLine("1. Insert Student");
+                Console.WriteLine("2. Update Student");
+                Console.WriteLine("3. Delete Student");
+                Console.WriteLine("4. Show All Students");
+                Console.WriteLine("5. Exit");
+                Console.Write("Choose an option: ");
+                string choice = Console.ReadLine();
+
+                switch (choice)
                 {
-                    connection.Open();
-                    Console.WriteLine("Connection opened successfully!");
+                    case "1":
+                        InsertStudent(repo);
+                        break;
 
+                    case "2":
+                        UpdateStudent(repo);
+                        break;
 
-                    while (true)
-                    {
-                        Console.WriteLine("\n=== Student Menu ===");
-                        Console.WriteLine("1. Insert Student");
-                        Console.WriteLine("2. Show All Students");
-                        Console.WriteLine("3. Update Student Mark");
-                        Console.WriteLine("4. Delete Student");
-                        Console.WriteLine("5. Exit");
-                        Console.Write("Choose an option: ");
+                    case "3":
+                        DeleteStudent(repo);
+                        break;
 
-                        int choise = Convert.ToInt32(Console.ReadLine());
+                    case "4":
+                        ShowAllStudents(repo);
+                        break;
 
-                        switch (choise)
-                        {
-                            case 1:
-                                insert(connection);
-                                break;
-                            case 2:
-                                fetch(connection);
-                                break;
-                            case 3:
-                                update(connection);
-                                break;
-                            case 4:
-                                delete(connection);
-                                break;
+                    case "5":
+                        return; 
 
-
-                        }
-
-                    }
-
+                    default:
+                        Console.WriteLine("Invalid choice, try again.");
+                        break;
                 }
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-
-
-
-        }
-        static void delete(SqlConnection connection)
-        {
-            string deleteQuery = "delete from Student where name=@Deletename";
-
-            Console.WriteLine("please enter your name");
-            string Deletename = Console.ReadLine();
-
-            using (SqlCommand cmd = new SqlCommand(deleteQuery, connection))
-            {
-                cmd.Parameters.AddWithValue("@Deletename", Deletename);
-                int rowAffacted = cmd.ExecuteNonQuery();
-                Console.WriteLine($"RowAffected is {rowAffacted} rows delete successfully");
             }
         }
 
-        static void insert(SqlConnection connection)
+        static void InsertStudent(StudentRepository repo)
         {
+            Student s = new Student();
 
-            Console.WriteLine("please Enter Your name: ");
-            string name = Console.ReadLine();
+            Console.Write("Enter Name: ");
+            s.name = Console.ReadLine();
 
+            Console.Write("Enter Family: ");
+            s.family = Console.ReadLine();
 
-            Console.WriteLine("please Enter Your family: ");
-            string family = Console.ReadLine();
+            Console.Write("Enter Age: ");
+            s.age = int.Parse(Console.ReadLine());
 
+            Console.Write("Enter Mark: ");
+            s.mark = int.Parse(Console.ReadLine());
 
-
-            Console.WriteLine("please Enter Your Age: ");
-            int age = Convert.ToInt32(Console.ReadLine());
-
-
-            Console.WriteLine("please Enter Your Mark: ");
-            int mark = Convert.ToInt32(Console.ReadLine());
-
-            string Insertquery = "insert into Student(name,family,age,mark) values(@name,@family,@age,@mark)";
-            using (SqlCommand cmd = new SqlCommand(Insertquery, connection))
-            {
-                cmd.Parameters.AddWithValue("@name", name);
-                cmd.Parameters.AddWithValue("@family", family);
-                cmd.Parameters.AddWithValue("@age", age);
-                cmd.Parameters.AddWithValue("@mark", mark);
-                int rowAffacted = cmd.ExecuteNonQuery();
-                Console.WriteLine($"RowAffected is {rowAffacted} rows insert successfully");
-            }
-
+            int rows = repo.insert(s);
+            Console.WriteLine($"{rows} student(s) inserted successfully.");
         }
-        static void update(SqlConnection connection)
+
+        static void UpdateStudent(StudentRepository repo)
         {
-            Console.WriteLine("please Enter Your name: ");
+            Console.Write("Enter Old Name: ");
             string oldName = Console.ReadLine();
 
+            Console.Write("Enter New Name: ");
+            string newName = Console.ReadLine();
 
-            Console.WriteLine("please Enter Your NewName: ");
-            string NewName = Console.ReadLine();
-
-            string updateQuery = "update student set name=@NewName where name=@oldName";
-            using (SqlCommand cmd = new SqlCommand(updateQuery, connection))
-            {
-                cmd.Parameters.AddWithValue("@oldName", oldName);
-                cmd.Parameters.AddWithValue("@NewName", NewName);
-                int rowAffacted = cmd.ExecuteNonQuery();
-                Console.WriteLine($"RowAffected is {rowAffacted} rows update successfully");
-            }
+            int rows = repo.update(oldName, newName);
+            Console.WriteLine($"{rows} student(s) updated successfully.");
         }
 
-        static void fetch(SqlConnection connection)
+        static void DeleteStudent(StudentRepository repo)
         {
-            string selectQuery = "select * from Student";
-            using (SqlCommand cmd2 = new SqlCommand(selectQuery, connection))
+            Console.Write("Enter Name to Delete: ");
+            string name = Console.ReadLine();
+
+            int rows = repo.delete(name);
+            Console.WriteLine($"{rows} student(s) deleted successfully.");
+        }
+
+        static void ShowAllStudents(StudentRepository repo)
+        {
+            List<Student> students = repo.GetAll();
+
+            Console.WriteLine("\n--- Student List ---");
+            foreach (var s in students)
             {
-                using (SqlDataReader reader = cmd2.ExecuteReader())
-                {
-
-
-                    while (reader.Read())
-                    {
-                        string Name = reader["name"].ToString();
-                        string Family = reader["family"].ToString();
-                        int Age = Convert.ToInt32(reader["age"].ToString());
-                        int Mark = Convert.ToInt32(reader["mark"].ToString());
-
-
-                        Console.WriteLine($"name: {Name}, family: {Family}, age: {Age}, mark: {Mark}");
-                    }
-                }
+                Console.WriteLine($"Name: {s.name}, Family: {s.family}, Age: {s.age}, Mark: {s.mark}");
             }
-
-
-
-            Console.ReadKey();
-
-
-
         }
     }
 }
